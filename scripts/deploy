@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Building and pushing the image. DO THIS EACH TIME YOU CHANGE THE APP
+cd ~/a2/docker
+docker build -t wansong123/assignment2 .
+# Must do this since cluster will draw from the public repo
+docker push wansong123/assignment2 
+
+# Deploying the stack
+docker stack deploy -c docker-compose.yml a2_stack

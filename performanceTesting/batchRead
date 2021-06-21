@@ -1,0 +1,12 @@
+#!/bin/bash
+
+startTime=`date +%s%N`
+
+curl -s 127.0.0.1:4000/[1-250] &
+curl -s 127.0.0.1:4000/[1-250] >/dev/null &
+curl -s 127.0.0.1:4000/[1-250] >/dev/null &
+curl -s 127.0.0.1:4000/[1-250] >/dev/null &
+
+wait
+endTime=`date +%s%N`
+echo $(((endTime - startTime) / 1000000)) milliseconds

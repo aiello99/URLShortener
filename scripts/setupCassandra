@@ -1,0 +1,8 @@
+CREATE KEYSPACE cassandraA2Keyspace
+WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 2};
+USE cassandraA2Keyspace;
+CREATE TABLE shortLongTable (
+    short text,
+    long text,
+	PRIMARY KEY (short)
+);

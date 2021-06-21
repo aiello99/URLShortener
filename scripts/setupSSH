@@ -1,0 +1,5 @@
+ssh-copy-id -i ~/.ssh/id_rsa 10.11.12.127
+ssh-copy-id -i ~/.ssh/id_rsa 10.11.12.128
+ssh-copy-id -i ~/.ssh/id_rsa 10.11.12.129
+ssh-copy-id -i ~/.ssh/id_rsa 10.11.12.227
+ssh-copy-id -i ~/.ssh/id_rsa 10.11.12.228

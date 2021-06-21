@@ -1,0 +1,8 @@
+#!/bin/bash
+echo hhhhiotwwg | ssh 10.11.12.127 -tt "sudo systemctl restart docker" &
+echo hhhhiotwwg | ssh 10.11.12.128 -tt "sudo systemctl restart docker" &
+echo hhhhiotwwg | ssh 10.11.12.129 -tt "sudo systemctl restart docker" &
+echo hhhhiotwwg | ssh 10.11.12.227 -tt "sudo systemctl restart docker" &
+echo hhhhiotwwg | ssh 10.11.12.228 -tt "sudo systemctl restart docker" &
+
+wait

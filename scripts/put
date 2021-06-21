@@ -1,0 +1,5 @@
+#!/bin/bash
+short=$1
+long=$2
+# curl "127.0.0.1:4000/$short/$long"
+curl -X PUT "127.0.0.1:4000/?short=$short&long=$long"

@@ -1,0 +1,119 @@
+version: "3.8"
+services:
+  web:
+    image: wansong123/assignment2
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      mode: global 
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "4000:80"
+    depends_on: 
+      - redis-cluster-init
+      - cassandraswarm
+    networks:
+      - webnet 
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - webnet #webnet is the overlay network that is created when your stack is launched for the entire swarm.
+
+  #Credits to the bitnami/redis image and https://stackoverflow.com/questions/50257006/redis-sentinel-failover-configuration-in-docker-swarm.
+  redis-master:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_AOF_ENABLED=no
+    command: /opt/bitnami/scripts/redis/run.sh --maxmemory-policy volatile-lru
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - webnet 
+
+  redis-slave:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6379'
+    depends_on:
+      - redis-master
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_AOF_ENABLED=no
+    command: /opt/bitnami/scripts/redis/run.sh --maxmemory-policy volatile-lru
+    deploy:
+      #mode: replicated
+      replicas: 2
+      restart_policy:
+        condition: on-failure 
+    networks:
+      - webnet
+
+  redis-sentinel:
+    image: 'bitnami/redis:5.0-debian-9'
+    ports:
+      - '16379'
+    depends_on:
+      - redis-master
+    entrypoint: |
+      bash -c 'bash -s <<EOF
+      "/bin/bash" -c "cat <<EOF > /opt/bitnami/redis/etc/sentinel.conf
+      port 16379
+      dir /tmp
+      sentinel monitor master-node redis-master 6379 2
+      sentinel down-after-milliseconds master-node 5000
+      sentinel parallel-syncs master-node 1
+      sentinel failover-timeout master-node 5000
+      EOF"
+      "/bin/bash" -c "redis-sentinel /opt/bitnami/redis/etc/sentinel.conf"    
+      EOF'
+    deploy:
+      #mode: replicated
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    networks:
+      - webnet
+
+#Credits to https://hub.docker.com/r/vegah/cassandra_swarm
+  cassandraswarm: #maximum one connection per host, with two connections as the maximum if sulmtaneous threshold is reached 
+    image: vegah/cassandra_swarm
+    ports: 
+      - '9042'
+    deploy:
+      mode: global 
+      restart_policy: 
+        condition: on-failure 
+        max_attempts: 3 
+        window: 120s 
+    environment:
+      SERVICENAME: '{{.Service.Name}}'
+    #network_mode: bridge # unfortunately someone didnt set up the DNS properly on the VMs, try getting hostname..... 
+    volumes:
+      - cassandravolume1:/var/lib/cassandra
+    networks:
+      - webnet
+
+volumes:
+  cassandravolume1:
+    external:
+      name: 'cassandra_volume1_{{.Task.Slot}}' #creates the volume when needed, scaling the service will automatically make one. tasks lote is the appended thing to replicas. there is also {{.Service.Name}}
+
+networks:
+  webnet:

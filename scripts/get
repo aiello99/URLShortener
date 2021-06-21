@@ -1,0 +1,3 @@
+#!/bin/bash
+short=$1
+curl -L "127.0.0.1:4000/$short"
